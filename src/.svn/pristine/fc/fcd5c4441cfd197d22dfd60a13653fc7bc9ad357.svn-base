@@ -1,0 +1,167 @@
+package co.piglet.waveblast;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class SpriteAnimation
+{
+    private ArrayList<BufferedImage> frames;
+    private Timer timer;
+    private int frameCount = 0;
+    private String animationName;
+
+    public SpriteAnimation(String spriteName, ImageCache cache)
+    {
+        // This is where we load the sprite data in
+        try
+        {
+            animationName = spriteName;
+            frames = new ArrayList<>();
+            switch (spriteName)
+            {
+                case "lazerstart":
+                    for (int i = 1; i < 3; i++)
+                    {
+                        String frameName = "sprites/" + spriteName + "-" + i + ".png";
+                        if (cache.contains(frameName)) frames.add(cache.getFromCache(frameName));
+                        else
+                        {
+                            System.out.println("Cache MISS for " + frameName);
+                            BufferedImage newFrame = ImageIO.read(new FileInputStream("sprites/" + spriteName + "-" + i + ".png"));
+                            frames.add(newFrame);
+                            cache.addToCache(frameName, newFrame);
+                        }
+                    }
+                    break;
+                case "lazer":
+                    for (int i = 1; i < 21; i++)
+                    {
+                        String frameName = "sprites/" + spriteName + "-" + i + ".png";
+                        if (cache.contains(frameName)) frames.add(cache.getFromCache(frameName));
+                        else
+                        {
+                            System.out.println("Cache MISS for " + frameName);
+                            BufferedImage newFrame = ImageIO.read(new FileInputStream("sprites/" + spriteName + "-" + i + ".png"));
+                            frames.add(newFrame);
+                            cache.addToCache(frameName, newFrame);
+                        }
+                    }
+                    break;
+                case "ship-shield":
+                    for (int i = 1; i < 6; i++)
+                    {
+                        String frameName = "sprites/" + spriteName + "-" + i + ".png";
+                        if (cache.contains(frameName)) frames.add(cache.getFromCache(frameName));
+                        else
+                        {
+                            System.out.println("Cache MISS for " + frameName);
+                            BufferedImage newFrame = ImageIO.read(new FileInputStream("sprites/" + spriteName + "-" + i + ".png"));
+                            frames.add(newFrame);
+                            cache.addToCache(frameName, newFrame);
+                        }
+                    }
+                    for (int i = 5; i > 0; i--)
+                    {
+                        String frameName = "sprites/" + spriteName + "-" + i + ".png";
+                        if (cache.contains(frameName)) frames.add(cache.getFromCache(frameName));
+                        else
+                        {
+                            System.out.println("Cache MISS for " + frameName);
+                            BufferedImage newFrame = ImageIO.read(new FileInputStream("sprites/" + spriteName + "-" + i + ".png"));
+                            frames.add(newFrame);
+                            cache.addToCache(frameName, newFrame);
+                        }
+                    }
+                    break;
+                case "die":
+                    for (int i = 1; i < 12; i++)
+                    {
+                        String frameName = "sprites/" + spriteName + "-" + i + ".png";
+                        if (cache.contains(frameName)) frames.add(cache.getFromCache(frameName));
+                        else
+                        {
+                            System.out.println("Cache MISS for " + frameName);
+                            BufferedImage newFrame = ImageIO.read(new FileInputStream("sprites/" + spriteName + "-" + i + ".png"));
+                            frames.add(newFrame);
+                            cache.addToCache(frameName, newFrame);
+                        }
+                    }
+                    break;
+
+                case "new-die":
+                    for (int i = 1; i < 11; i++)
+                    {
+                        String frameName = "sprites/" + spriteName + "-" + i + ".png";
+                        if (cache.contains(frameName)) frames.add(cache.getFromCache(frameName));
+                        else
+                        {
+                            System.out.println("Cache MISS for " + frameName);
+                            BufferedImage newFrame = ImageIO.read(new FileInputStream("sprites/" + spriteName + "-" + i + ".png"));
+                            frames.add(newFrame);
+                            cache.addToCache(frameName, newFrame);
+                        }
+                    }
+                    break;
+
+                default:
+                    if (cache.contains(spriteName)) frames.add(cache.getFromCache(spriteName));
+                    else
+                    {
+                        System.out.println("Cache MISS for " + spriteName);
+                        BufferedImage newFrame = ImageIO.read(new FileInputStream(spriteName));
+                        frames.add(newFrame);
+                        cache.addToCache(spriteName, newFrame);
+                    }
+                    break;
+
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void animate(int interval)
+    {
+        frameCount = 0;
+        timer = new Timer();
+        timer.schedule(new AnimationTimer(), 0, interval);
+    }
+
+    public void stopAnimation()
+    {
+        timer.cancel();
+    }
+
+    public BufferedImage getFrame()
+    {
+        return frames.get(frameCount);
+    }
+
+    private class AnimationTimer extends TimerTask
+    {
+        @Override
+        public void run()
+        {
+            if (animationName.equals("die"))
+            {
+                if (frameCount < frames.size() - 1) frameCount++;
+            }
+            else if (animationName.equals("new-die"))
+            {
+                if (frameCount < frames.size() - 1) frameCount ++;
+            }
+            else
+            {
+                if (frameCount == frames.size() - 1) frameCount = 0;
+                else frameCount++;
+            }
+        }
+    }
+}
