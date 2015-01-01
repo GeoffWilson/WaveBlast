@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="vgm">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../VGM/out/artifacts/vgm/vgm.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../VGM/src" />
+    </SOURCES>
+  </library>
+</component>

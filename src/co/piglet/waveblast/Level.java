@@ -16,7 +16,7 @@ public class Level {
             try {
                 audio.loadFile("audio/background.vgz");
                 audio.setVolume(0.35d);
-                //audio.startTrack(1, 600);
+                audio.startTrack(1, 600);
             } catch (Exception e) {
                 e.printStackTrace();
             }
