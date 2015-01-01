@@ -1,5 +1,7 @@
 package co.piglet.waveblast;
 
+import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -101,7 +103,7 @@ public class GameEngine {
     // Debug shapes
     private Rectangle laserShape = new Rectangle(0, 0, 0, 0);
 
-    public GameEngine(boolean fullScreen, int x, int y) {
+    public GameEngine(boolean fullScreen, int x, int y) throws AWTException {
 
         controller = new ControllerSupport();
 
@@ -157,6 +159,13 @@ public class GameEngine {
 
         // Double buffering
         c.createBufferStrategy(2);
+        strategy = c.getBufferStrategy();
+
+        ExtendedBufferCapabilities ebc = new ExtendedBufferCapabilities(strategy.getCapabilities());
+        ebc.getVSync();
+        ebc = ebc.derive(ExtendedBufferCapabilities.VSyncType.VSYNC_ON);
+
+        c.createBufferStrategy(2, ebc);
         strategy = c.getBufferStrategy();
 
         // Create graphics object from the buffer strategy
@@ -405,11 +414,7 @@ public class GameEngine {
             }
         } else {
             Timer t = new Timer();
-            t.schedule(new InputTimer(), 0, 1000 / 100);
-
-//            while (running) {
-//                this.render();
-//            }
+            t.scheduleAtFixedRate(new InputTimer(), 0, 1000 / 60);
         }
 
     }
