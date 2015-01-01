@@ -36,6 +36,6 @@ public class Main implements Runnable {
         g.loadLevel();
         g.masterLoop();
 
-        System.exit(0);
+        //System.exit(0);
     }
 }

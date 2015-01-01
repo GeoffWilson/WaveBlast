@@ -3,7 +3,6 @@ package co.piglet.waveblast;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Timer;
-import java.util.TimerTask;
 
 public class Sprite {
     private HashMap<String, SpriteAnimation> animations;
@@ -17,8 +16,11 @@ public class Sprite {
 
     public int enemyType = 0;
 
-    public int x;;
+    public int x;
+    public int incX;
+
     public int y;
+    public int incY;
 
     public boolean rotated;
 
@@ -61,34 +63,41 @@ public class Sprite {
     }
 
     public void terminate() {
-        timer.cancel();
+        //timer.cancel();
         activeAnimation.stopAnimation();
     }
 
     public void stopMove() {
-        timer.cancel();
+       // timer.cancel();
     }
 
     public void moveSprite(int incX, int incY, int interval) {
-        timer = new Timer();
-        timer.schedule(new MovementTimer(incX, incY), 0, interval);
+        //timer = new Timer();
+        //timer.schedule(new MovementTimer(incX, incY), 0, interval);
+        this.incX = incX;
+        this.incY = incY;
     }
 
-    private class MovementTimer extends TimerTask {
-        private int incX;
-        private int incY;
-
-        public MovementTimer(int incX, int incY) {
-            this.incX = incX;
-            this.incY = incY;
-        }
-
-        @Override
-        public void run() {
-            x += incX;
-            y += incY;
-        }
+    public void move() {
+        x += incX;
+        y += incY;
     }
+
+//    private class MovementTimer extends TimerTask {
+//        private int incX;
+//        private int incY;
+//
+//        public MovementTimer(int incX, int incY) {
+//            this.incX = incX;
+//            this.incY = incY;
+//        }
+//
+//        @Override
+//        public void run() {
+//            x += incX;
+//            y += incY;
+//        }
+//    }
 }
 
 

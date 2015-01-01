@@ -403,9 +403,9 @@ public class GameEngine {
             Timer t = new Timer();
             t.schedule(new InputTimer(), 0, 1000 / 60);
 
-            while (running) {
-                this.render();
-            }
+//            while (running) {
+//                this.render();
+//            }
         }
 
     }
@@ -448,6 +448,13 @@ public class GameEngine {
     }
 
     private void logic() {
+
+        // Move everything
+        hostileEntities.forEach(Sprite::move);
+        hostileProjectile.forEach(Sprite::move);
+        friendlyEntities.forEach(Sprite::move);
+        friendlyProjectiles.forEach(Sprite::move);
+        powerUps.forEach(Sprite::move);
 
         // This is where we spawn enemies etc..
         double d = Math.random();
@@ -519,17 +526,17 @@ public class GameEngine {
                         s.x = enemy.x;
                         s.y = enemy.y + 25;
                         s.setActiveAnimation("east", 1000);
-                        s.moveSprite(-3, 0, 5);
+                        s.moveSprite(-6, 0, 5);
                         Sprite s2 = new Sprite("sprites/shot-e-2.png", cache);
                         s2.x = enemy.x;
                         s2.y = enemy.y + 25;
                         s2.setActiveAnimation("east", 1000);
-                        s2.moveSprite(-3, 1, 5);
+                        s2.moveSprite(-6, 1, 5);
                         Sprite s3 = new Sprite("sprites/shot-e-2.png", cache);
                         s3.x = enemy.x;
                         s3.y = enemy.y + 25;
                         s3.setActiveAnimation("east", 1000);
-                        s3.moveSprite(-3, -1, 5);
+                        s3.moveSprite(-6, -1, 5);
 
                         hostileProjectile.add(s);
                         hostileProjectile.add(s2);
@@ -541,7 +548,7 @@ public class GameEngine {
                         s.x = enemy.x;
                         s.y = enemy.y + 25;
                         s.setActiveAnimation("east", 1000);
-                        s.moveSprite(-3, 0, 5);
+                        s.moveSprite(-6, 0, 5);
 
                         hostileProjectile.add(s);
                     }
@@ -853,6 +860,7 @@ public class GameEngine {
                 input();
                 logic();
             }
+            render();
             ticks ++;
         }
     }
@@ -924,7 +932,7 @@ public class GameEngine {
                 newShot.y = playerShip.y + playerShip.getFrame().getHeight() / 2 - 6;
 
                 newShot.setActiveAnimation("east", 1000);
-                newShot.moveSprite(3, 0, 5);
+                newShot.moveSprite(6, 0, 5);
                 friendlyProjectiles.add(newShot);
             }
             score += 5;
