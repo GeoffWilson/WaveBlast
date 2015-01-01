@@ -3,7 +3,6 @@ package co.piglet.waveblast;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
-import java.util.Timer;
 
 public class Sprite {
 
@@ -25,8 +24,12 @@ public class Sprite {
     public int y;
     public int incY;
 
-    public boolean rotated;
-    public boolean tileable;
+    public int parallaxSkipVal = 0;
+    public int parallaxCycleVal = 0;
+
+    public boolean isRotated;
+    public boolean isTile;
+    public boolean isParallax;
 
     public boolean isBounceBack;
 
@@ -60,7 +63,7 @@ public class Sprite {
     }
 
     public BufferedImage getFrame() {
-        if (rotated) {
+        if (isRotated) {
             return activeAnimation.getRotatedFrame();
         }
         return activeAnimation.getFrame();
@@ -77,6 +80,13 @@ public class Sprite {
 
     public void move() {
         if (isAlive) {
+            if (isParallax) {
+                parallaxCycleVal ++;
+                if (parallaxCycleVal % parallaxSkipVal != 0){
+                    return;
+                }
+                parallaxCycleVal = 0;
+            }
             x += incX;
             y += incY;
         }

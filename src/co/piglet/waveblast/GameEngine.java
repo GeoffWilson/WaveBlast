@@ -85,6 +85,7 @@ public class GameEngine {
 
     // Render Queues
     private Sprite playerShip;
+
     private ConcurrentLinkedQueue<Sprite> hostileEntities;
     private ConcurrentLinkedQueue<Sprite> hostileProjectile;
     private ConcurrentLinkedQueue<Sprite> friendlyEntities;
@@ -93,6 +94,8 @@ public class GameEngine {
     private ConcurrentLinkedQueue<Sprite> stars;
     private ConcurrentLinkedQueue<Sprite> laserStars;
     private ConcurrentLinkedQueue<Sprite> terrainSprites;
+    private ConcurrentLinkedQueue<Sprite> backgrounds;
+
     private BufferedImage title;
     private BufferedImage uiShield;
     private BufferedImage uiPower;
@@ -285,6 +288,10 @@ public class GameEngine {
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, resolutionX, resolutionY);
 
+            for (Sprite sprite : backgrounds) {
+                g.drawImage(sprite.getFrame(), sprite.x, sprite.y, null);
+            }
+
             // Draw the stars!
             for (Sprite star : stars) {
                 if (star.x < 0) {
@@ -391,7 +398,7 @@ public class GameEngine {
         stars = new ConcurrentLinkedQueue<>();
         laserStars = new ConcurrentLinkedQueue<>();
         terrainSprites = new ConcurrentLinkedQueue<>();
-
+        backgrounds = new ConcurrentLinkedQueue<>();
 
         playerShip = new Sprite("sprites/ship.png", cache);
         playerShip.loadAdditionalAnimations("ship-shield", cache);
@@ -404,9 +411,9 @@ public class GameEngine {
         playerShip.y = (resolutionY / 2) - (playerShip.getFrame().getHeight() / 2);
 
         Sprite topTerrain = new Sprite("sprites/top.png", cache);
-        topTerrain.tileable = true;
+        topTerrain.isTile = true;
         Sprite bottomTerrain = new Sprite("sprites/bottom.png", cache);
-        bottomTerrain.tileable = true;
+        bottomTerrain.isTile = true;
 
         topTerrain.moveSprite(-1, 0);
         topTerrain.setActiveAnimation("east", 1000);
@@ -486,6 +493,7 @@ public class GameEngine {
         stars.forEach(Sprite::move);
         laserStars.forEach(Sprite::move);
         terrainSprites.forEach(Sprite::move);
+        backgrounds.forEach(Sprite::move);
     }
 
     private void logic() {
@@ -622,7 +630,7 @@ public class GameEngine {
 
                             Sprite s2 = new Sprite("sprites/shot-e-4.png", cache);
                             s2.x = enemy.x;
-                            s2.y = enemy.y + 25;
+                            s2.y = enemy.y;
                             s2.setActiveAnimation("east", 1000);
                             s2.moveSprite(-8, 1);
                             hostileProjectile.add(s2);
@@ -634,7 +642,7 @@ public class GameEngine {
 
                             Sprite s2 = new Sprite("sprites/shot-e-3.png", cache);
                             s2.x = enemy.x;
-                            s2.y = enemy.y + 25;
+                            s2.y = enemy.y;
                             s2.setActiveAnimation("east", 1000);
                             s2.moveSprite(enemy.shotTypes[0].x, enemy.shotTypes[0].y);
                             enemy.isShooting = true;
@@ -757,7 +765,12 @@ public class GameEngine {
                 Area collisionArea = new Area((Shape) terrainShape.clone());
                 collisionArea.intersect(new Area(playerShape));
                 if (!collisionArea.isEmpty()) {
-                    lostLife();
+                    if (!shieldOn) {
+                        lostLife();
+                    } else {
+                        downPressed = false;
+                        upPressed = false;
+                    }
                 }
 
             }
@@ -894,7 +907,7 @@ public class GameEngine {
 
             if (Math.random() > 0.965d) {
                 Sprite newPowerUp = new Sprite("sprites/powerup-1.png", cache);
-                newPowerUp.rotated = true;
+                newPowerUp.isRotated = true;
                 newPowerUp.moveSprite(-3, 0);
                 newPowerUp.x = enemy.x + 15;
                 newPowerUp.y = enemy.y + 15;
