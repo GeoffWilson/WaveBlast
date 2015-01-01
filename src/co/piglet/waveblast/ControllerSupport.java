@@ -3,7 +3,6 @@ package co.piglet.waveblast;
 import net.java.games.input.Component;
 import net.java.games.input.Controller;
 import net.java.games.input.ControllerEnvironment;
-import net.java.games.input.Version;
 
 /**
  * Provides support for the standard 360 controller
@@ -13,8 +12,7 @@ import net.java.games.input.Version;
  * Y = 3
  */
 
-public class ControllerSupport
-{
+public class ControllerSupport {
     private final int A_BUTTON = 0;
     private final int B_BUTTON = 1;
     private final int C_BUTTON = 2;
@@ -30,15 +28,11 @@ public class ControllerSupport
     private Component yAxis;
     private Component[] buttons;
 
-    public ControllerSupport()
-    {
+    public ControllerSupport() {
         xboxController = getXboxController();
-        if (xboxController == null)
-        {
+        if (xboxController == null) {
             System.out.println("No Xbox controller detected, disabling game pad support");
-        }
-        else
-        {
+        } else {
             System.out.println("360 Controller Found");
 
             dPad = xboxController.getComponent(Component.Identifier.Axis.POV);
@@ -57,20 +51,16 @@ public class ControllerSupport
         }
     }
 
-    private Controller getXboxController()
-    {
+    private Controller getXboxController() {
         // Detect if we have an Xbox controller present
 
         System.out.println("Checking Controller Support....");
         ControllerEnvironment ce = ControllerEnvironment.getDefaultEnvironment();
         Controller[] cs = ce.getControllers();
 
-        for (Controller c : cs)
-        {
-            if (c.getName().contains("playsega"))
-            {
-                if (c.getType() == Controller.Type.GAMEPAD)
-                {
+        for (Controller c : cs) {
+            if (c.getName().contains("playsega")) {
+                if (c.getType() == Controller.Type.GAMEPAD) {
                     return c;
                 }
             }
@@ -79,38 +69,31 @@ public class ControllerSupport
         return null;
     }
 
-    public float getDPadPosition()
-    {
-        if (xboxController != null)
-        {
+    public float getDPadPosition() {
+        if (xboxController != null) {
             xboxController.poll();
             return dPad.getPollData();
         }
         return 0.0f;
     }
 
-    public float getXAxisPosition()
-    {
-        if (xboxController != null)
-        {
+    public float getXAxisPosition() {
+        if (xboxController != null) {
             xboxController.poll();
             return xAxis.getPollData();
         }
         return 0.0f;
     }
 
-    public float getYAxisPosition()
-    {
-        if (xboxController != null)
-        {
+    public float getYAxisPosition() {
+        if (xboxController != null) {
             xboxController.poll();
             return yAxis.getPollData();
         }
         return 0.0f;
     }
 
-    public float getButton(int button)
-    {
+    public float getButton(int button) {
         xboxController.poll();
         return buttons[button].getPollData();
     }

@@ -1,30 +1,23 @@
 package co.piglet.waveblast;
 
-public class Main implements Runnable
-{
-    public void run()
-    {
+public class Main implements Runnable {
+    public void run() {
 
     }
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
         boolean fullScreen = false;
-        int x = 640;
-        int y = 480;
+        int x = 1280;
+        int y = 720;
 
-        try
-        {
-            if (args.length > 0)
-            {
+        try {
+            if (args.length > 0) {
                 fullScreen = args[0].equals("fullscreen");
                 x = Integer.parseInt(args[1]);
                 y = Integer.parseInt(args[2]);
 
             }
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -32,13 +25,11 @@ public class Main implements Runnable
 
     }
 
-    public Main()
-    {
+    public Main() {
 
     }
 
-    public Main(boolean fullScreen, int x, int y)
-    {
+    public Main(boolean fullScreen, int x, int y) {
         // Do pre-init here
         GameEngine g = new GameEngine(fullScreen, x, y);
 

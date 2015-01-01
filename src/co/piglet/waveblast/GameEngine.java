@@ -10,18 +10,19 @@ import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
-import java.io.FileInputStream;
+import java.io.*;
 import java.util.HashMap;
+import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.locks.LockSupport;
 
 /**
  * Version 1.0 Rendering engine for WaveBlast
  */
-public class GameEngine
-{
+public class GameEngine {
+
+    // These are used to render the UI
     private int resolutionX;
     private int resolutionY;
     private boolean fullScreen;
@@ -59,6 +60,7 @@ public class GameEngine
     // Rendering flags
     private boolean flash;
     private Timer flashTimer;
+    public static long ticks = 0;
 
     // PowerUps
     private boolean hasPowerUp = false;
@@ -75,6 +77,13 @@ public class GameEngine
 
     private boolean running = false;
 
+    // Score Stuff
+    private int extraLifeScore = 17500;
+    private float extraLifeMultiple = 1.25F;
+    private int highScore = 10000;
+    private int multi = 1;
+    private int bounceBacks = 0;
+
     // Render Queues
     private Sprite playerShip;
     private ConcurrentLinkedQueue<Sprite> hostileEntities;
@@ -84,64 +93,53 @@ public class GameEngine
     private ConcurrentLinkedQueue<Sprite> powerUps;
     private ConcurrentLinkedQueue<Sprite> stars;
     private ConcurrentLinkedQueue<Sprite> laserStars;
-    //private BufferedImage level;
     private BufferedImage title;
+    private BufferedImage uiShield;
+    private BufferedImage uiPower;
+    private BufferedImage uiLife;
 
     // Debug shapes
     private Rectangle laserShape = new Rectangle(0, 0, 0, 0);
 
-    public GameEngine(boolean fullScreen, int x, int y)
-    {
-        // Create the frame
-        Dimension d;
-        if (!fullScreen) d = new Dimension(x, y + 28);
-        else d = new Dimension(x, y);
+    public GameEngine(boolean fullScreen, int x, int y) {
 
         controller = new ControllerSupport();
 
         cache = new ImageCache();
 
         sounds = new SoundBank();
-        this.loanSoundEffects();
+        this.loadSoundEffects();
 
-        resolutionX = (int) d.getWidth();
-        resolutionY = (int) d.getHeight();
+        resolutionX = x;
+        resolutionY = y;
         this.fullScreen = fullScreen;
 
-        Frame container = new Frame("WaveBlast 1.4");
+        Frame container = new Frame("WaveBlast Reloaded 1.0");
         container.setIgnoreRepaint(true);
 
         GraphicsEnvironment graphicsEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice graphicsDevice = graphicsEnvironment.getDefaultScreenDevice();
 
-        if (this.fullScreen)
-        {
+        if (this.fullScreen) {
             container.setUndecorated(true);
-            if (graphicsDevice.isFullScreenSupported())
-            {
+            if (graphicsDevice.isFullScreenSupported()) {
                 graphicsDevice.setFullScreenWindow(container);
-            }
-            else
-            {
+            } else {
                 System.out.println("Full screen is not supported on your system :(");
             }
         }
-        if (graphicsDevice.isDisplayChangeSupported())
-        {
+        if (graphicsDevice.isDisplayChangeSupported()) {
             int colorDepth = 32;
             graphicsDevice.setDisplayMode(new DisplayMode(this.resolutionX, this.resolutionY, colorDepth, DisplayMode.REFRESH_RATE_UNKNOWN));
         }
 
-        container.setPreferredSize(new Dimension(resolutionX, resolutionY));
+        //container.setPreferredSize(new Dimension(resolutionX, resolutionY));
         container.setLayout(new BorderLayout());
         container.setBounds(0, 0, resolutionX, resolutionY);
-        container.pack();
         container.setResizable(false);
         container.setVisible(true);
-        container.addWindowListener(new WindowAdapter()
-        {
-            public void windowClosing(WindowEvent e)
-            {
+        container.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
                 System.exit(0);
             }
         });
@@ -172,67 +170,95 @@ public class GameEngine
         // Enable AA for vectors
         g.setRenderingHints(renderingHints);
 
-        try
-        {
+        try {
+
+            Properties prop = new Properties();
+            prop.load(new FileReader(new File("config.prop")));
+            highScore = Integer.parseInt(prop.getProperty("highscore"));
+
             flashTimer = new Timer();
             flashTimer.schedule(new FlashTimer(), 0, 500);
             title = ImageIO.read(new FileInputStream("sprites/title.png"));
-        }
-        catch (Exception e)
-        {
+            uiPower = ImageIO.read(new FileInputStream("sprites/powerup-1.png"));
+            uiShield = ImageIO.read(new FileInputStream("sprites/ship-shield-5.png"));
+            uiLife = ImageIO.read(new FileInputStream("sprites/ship.png"));
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void loanSoundEffects()
-    {
+    private void loadSoundEffects() {
         sounds.addSound("explode", new SoundEffect("audio/pop.vgz", 1.2d));
         sounds.addSound("shoot", new SoundEffect("audio/pewpew.vgz", 0.22d));
-        sounds.addSound("triple" , new SoundEffect("audio/triple.vgz", 0.22d));
-        sounds.addSound("shield" , new SoundEffect("audio/shieldfx.vgz", 2.0d));
+        sounds.addSound("triple", new SoundEffect("audio/triple.vgz", 0.22d));
+        sounds.addSound("shield", new SoundEffect("audio/shieldfx.vgz", 2.0d));
         sounds.addSound("shield-off", new SoundEffect("audio/shielddrop.vgz", 0.25d));
         sounds.addSound("power", new SoundEffect("audio/powerup.vgz", 0.6d));
         sounds.addSound("reflect", new SoundEffect("audio/reflect.vgz", 2.0d));
         sounds.addSound("laser", new SoundEffect("audio/lazer.vgz", 2.0d));
     }
 
-    private void renderUI()
-    {
+    private void renderUI() {
+
         Font f = new Font("Consolas", Font.BOLD, 22);
+
+        // This is the score, it goes in the top left
         g.setFont(f);
         g.setColor(Color.GRAY);
-        g.drawString("SCORE: " + score, 21, 40);
-        g.drawString("SCORE: " + score, 19, 40);
-        g.drawString("SCORE: " + score, 20, 39);
-        g.drawString("SCORE: " + score, 20, 41);
-        g.setColor(Color.BLACK);
-        g.drawString("SCORE: " + score, 20, 40);
-
-        g.setColor(Color.GRAY);
-        g.drawString("LIVES: " + lives, 21, 75);
-        g.drawString("LIVES: " + lives, 19, 75);
-        g.drawString("LIVES: " + lives, 20, 74);
-        g.drawString("LIVES: " + lives, 20, 76);
-        g.setColor(Color.BLACK);
-        g.drawString("LIVES: " + lives, 20, 75);
-
+        g.drawString("SCORE: " + score + " (x " + multi + ")", 21, 40);
+        g.drawString("SCORE: " + score + " (x " + multi + ")", 19, 40);
+        g.drawString("SCORE: " + score + " (x " + multi + ")", 20, 39);
+        g.drawString("SCORE: " + score + " (x " + multi + ")", 20, 41);
         g.setColor(Color.WHITE);
-        g.fillRoundRect(20, 420, 104, 20, 10, 10);
+        g.drawString("SCORE: " + score + " (x " + multi + ")", 20, 40);
+
+        // This is the top score, it goes in the top right
+        g.setColor(Color.GRAY);
+        g.drawString("HIGH: " + highScore, resolutionX - 189, 40);
+        g.drawString("HIGH: " + highScore, resolutionX - 191, 40);
+        g.drawString("HIGH: " + highScore, resolutionX - 190, 39);
+        g.drawString("HIGH: " + highScore, resolutionX - 190, 41);
+        g.setColor(Color.WHITE);
+        g.drawString("HIGH: " + highScore, resolutionX - 190, 40);
+
+        // This goes bottom left
+        g.setColor(Color.CYAN);
+        g.fillRoundRect(50, resolutionY - 50, 104, 20, 10, 10);
 
         g.setColor(Color.BLUE);
-        g.fillRoundRect(22, 422, ((shieldEnergy / 10)), 16, 5, 5);
+        g.fillRoundRect(52, resolutionY - 48, ((shieldEnergy / 10)), 16, 5, 5);
 
-        if (hasPowerUp)
-        {
-            g.setColor(Color.WHITE);
-            g.fillRoundRect(150, 420, 104, 20, 10, 10);
+        g.drawImage(uiShield, 15, resolutionY - 55, 32, 32, null);
 
+        if (hasPowerUp) {
             g.setColor(Color.GREEN);
-            g.fillRoundRect(152, 422, ((powerUpEnergy / 10)), 16, 5, 5);
+            g.fillRoundRect(50, resolutionY - 80, 104, 20, 10, 10);
+
+            g.setColor(new Color(0, 100, 0));
+            g.fillRoundRect(52, resolutionY - 78, ((powerUpEnergy / 10)), 16, 5, 5);
+
+            g.drawImage(uiPower, 18, resolutionY - 85, 25, 25, null);
         }
 
-        if (gameOver)
-        {
+        if (lives <= 5) {
+            int x = resolutionX - 60;
+            for (int i = 0; i < lives; i ++) {
+                g.drawImage(uiLife, x, resolutionY - 55, 32, 32, null);
+                x-= 40;
+            }
+        } else {
+            g.drawImage(uiLife, resolutionX - 100, resolutionY - 55, 32, 32, null);
+            g.setColor(Color.GRAY);
+            g.drawString(String.valueOf(lives), resolutionX - 61, resolutionY - 33);
+            g.drawString(String.valueOf(lives), resolutionX - 59, resolutionY - 33);
+            g.drawString(String.valueOf(lives), resolutionX - 60, resolutionY - 33);
+            g.drawString(String.valueOf(lives), resolutionX - 60, resolutionY - 33);
+            g.setColor(Color.WHITE);
+            g.drawString(String.valueOf(lives), resolutionX - 60, resolutionY - 33);
+        }
+
+        if (gameOver) {
             f = new Font("Consolas", Font.BOLD, 48);
             g.setFont(f);
             g.setColor(Color.GRAY);
@@ -245,116 +271,94 @@ public class GameEngine
         }
     }
 
-    private void render()
-    {
-        if (gameStarted)
-        {
+    private void render() {
+
+        if (gameStarted) {
+
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, resolutionX, resolutionY);
 
             // Draw the stars!
-            for (Sprite star : stars)
-            {
-                if (star.x < 0)
-                {
+            for (Sprite star : stars) {
+                if (star.x < 0) {
                     star.terminate();
                     stars.remove(star);
-                }
-                else g.drawImage(star.getFrame(), star.x, star.y, null);
+                } else g.drawImage(star.getFrame(), star.x, star.y, null);
             }
 
             // This is where we render the next frame
-            for (Sprite sprite : friendlyEntities)
-            {
+            for (Sprite sprite : friendlyEntities) {
                 g.drawImage(sprite.getFrame(), sprite.x, sprite.y, null);
             }
 
-            for (Sprite sprite : friendlyProjectiles)
-            {
-                if (sprite.x > resolutionX || sprite.y > resolutionY)
-                {
+            for (Sprite sprite : friendlyProjectiles) {
+                if (sprite.x > resolutionX || sprite.y > resolutionY) {
                     sprite.terminate();
                     friendlyProjectiles.remove(sprite);
-                }
-                else g.drawImage(sprite.getFrame(), sprite.x, sprite.y, null);
+                } else g.drawImage(sprite.getFrame(), sprite.x, sprite.y, null);
             }
 
-            for (Sprite sprite : hostileEntities)
-            {
-                if (sprite.x + 80 < 0)
-                {
+            for (Sprite sprite : hostileEntities) {
+                if (sprite.x + 80 < 0) {
                     sprite.terminate();
                     hostileEntities.remove(sprite);
-                }
-                else
-                {
+                } else {
                     g.drawImage(sprite.getFrame(), sprite.x, sprite.y, null);
                 }
             }
 
-            for (Sprite sprite : hostileProjectile)
-            {
-                if (sprite.x + 20 < 0)
-                {
+            for (Sprite sprite : hostileProjectile) {
+                if (sprite.x + 20 < 0) {
                     sprite.terminate();
                     hostileProjectile.remove(sprite);
-                }
-                else
-                {
+                } else {
                     g.drawImage(sprite.getFrame(), sprite.x, sprite.y, null);
                 }
             }
 
-            for (Sprite sprite : powerUps)
-            {
-                if (sprite.x + 20 < 0)
-                {
+            for (Sprite sprite : powerUps) {
+                if (sprite.x + 20 < 0) {
                     sprite.terminate();
                     powerUps.remove(sprite);
-                }
-                else
-                {
+                } else {
                     g.drawImage(sprite.getFrame(), sprite.x, sprite.y, null);
                 }
             }
 
             g.drawImage(playerShip.getFrame(), playerShip.x, playerShip.y, null);
 
-            if (drawLazer)
-            {
+            if (drawLazer) {
                 g.drawImage(lazer.getFrame(), playerShip.x, playerShip.y, null);
 
-                if (hasLaser)
-                {
-                    for (Sprite sprite : laserStars)
-                    {
-                        if (sprite.x > resolutionX || sprite.y > resolutionY)
-                        {
+                if (hasLaser) {
+                    for (Sprite sprite : laserStars) {
+                        if (sprite.x > resolutionX || sprite.y > resolutionY) {
                             sprite.terminate();
                             laserStars.remove(sprite);
-                        }
-                        else g.drawImage(sprite.getFrame(), sprite.x, playerShip.y + sprite.y, null);
+                        } else g.drawImage(sprite.getFrame(), sprite.x, playerShip.y + sprite.y, null);
                     }
                 }
             }
 
             this.renderUI();
-        }
-        else
-        {
-            g.drawImage(title, 0, 0, null);
-            if (flash)
-            {
+        } else {
+
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, resolutionX, resolutionY);
+            g.drawImage(title, 320, 100, null);
+
+            if (flash) {
                 g.setColor(Color.BLACK);
-                g.fillRect(310, 360, 290, 30);
+                g.fillRect(630, 460, 290, 30);
             }
+
+
         }
 
         strategy.show();
     }
 
-    public void loadLevel()
-    {
+    public void loadLevel() {
         // Load the level data
         new Level();
 
@@ -381,43 +385,37 @@ public class GameEngine
         c.requestFocusInWindow();
     }
 
-    public void masterLoop()
-    {
+    public void masterLoop() {
+
         running = true;
 
-        if (fullScreen)
-        {
-            while (running)
-            {
+        if (fullScreen) {
+            while (running) {
                 if (gameStarted) this.renderStars();
-                if (!dead && gameStarted)
-                {
+                if (!dead && gameStarted) {
                     score += 1;
                     this.input();
                     this.logic();
                 }
                 this.render();
             }
-        }
-        else
-        {
+        } else {
             Timer t = new Timer();
             t.schedule(new InputTimer(), 0, 1000 / 60);
 
-            while (running)
-            {
+            while (running) {
                 this.render();
             }
         }
+
     }
 
-    private void renderStars()
-    {
+    private void renderStars() {
+
         if (hasLaser) this.renderLaserStars();
         double d = Math.random();
 
-        if (d > 0.65d)
-        {
+        if (d > 0.65d) {
             Sprite s = new Sprite("sprites/star.png", cache);
             s.x = resolutionX;
             s.y = (int) (Math.random() * (resolutionY - 64));
@@ -428,14 +426,14 @@ public class GameEngine
 
             stars.add(s);
         }
+
     }
 
-    private void renderLaserStars()
-    {
+    private void renderLaserStars() {
+
         double d = Math.random();
 
-        if (d > 0.40d)
-        {
+        if (d > 0.40d) {
             Sprite s = new Sprite("sprites/b-star.png", cache);
             s.x = playerShip.x + 91;
             s.y = (int) ((Math.random() * (50)));
@@ -446,34 +444,33 @@ public class GameEngine
 
             laserStars.add(s);
         }
+
     }
 
-    private void logic()
-    {
+    private void logic() {
+
         // This is where we spawn enemies etc..
         double d = Math.random();
         double delta = score > 10000 ? 0.93d : 0.96d;
         if (score > 50000) delta = 0.90d;
 
-        if (hasPowerUp)
-        {
+        checkScores();
+
+        if (hasPowerUp) {
             if (powerUpEnergy > 0) powerUpEnergy -= 3;
-            else
-            {
+            else {
                 hasPowerUp = false;
                 tripleShot = false;
                 rapidFire = false;
                 nonStop = false;
-                if (hasLaser)
-                {
+                if (hasLaser) {
                     drawLazer = false;
                     sounds.stopSound("laser");
                     hasLaser = false;
                 }
                 //shipSpeed = 3;
 
-                if (extraShield)
-                {
+                if (extraShield) {
                     extraShield = false;
                     if (shieldSoundOn) sounds.playSound("shield-off", 2);
                     shieldSoundOn = false;
@@ -482,30 +479,25 @@ public class GameEngine
             }
         }
 
-        if (d > delta)
-        {
+        if (d > delta) {
             double type = Math.random();
 
             Sprite s;
-            if (type > 0.95d)
-            {
+            if (type > 0.95d) {
                 // Spawn hostile
-                s = new Sprite("sprites/enemy-2.png", cache);
+                s = new Sprite("sprites/new-enemy-3.png", cache);
                 s.x = resolutionX;
                 s.y = (int) (Math.random() * (resolutionY - 64));
                 s.setActiveAnimation("east", 1000);
-                s.moveSprite(-3, 0, 1000 / 59);
+                s.moveSprite(-6, 0, 1000 / 59);
                 s.enemyType = 1;
-            }
-            else
-            {
-
+            } else {
                 // Spawn hostile
-                s = new Sprite("sprites/enemy.png", cache);
+                s = new Sprite(type <= 0.485 ? "sprites/new-enemy-1.png" : "sprites/new-enemy-2.png", cache);
                 s.x = resolutionX;
                 s.y = (int) (Math.random() * (resolutionY - 64));
                 s.setActiveAnimation("east", 1000);
-                int speed = Math.random() > 0.5d ? -5 : -3;
+                int speed = Math.random() > 0.5d ? -8 : -6;
 
                 double angleChance = Math.random();
                 if (angleChance < 0.8d) s.moveSprite(speed, 0, 1000 / 60);
@@ -515,46 +507,41 @@ public class GameEngine
             }
 
             hostileEntities.add(s);
+
         }
 
         // Enemy shots!
-        for (Sprite enemy : hostileEntities)
-        {
-            if (enemy.isAlive)
-            {
-                if (Math.random() > 0.985d)
-                {
-                    if (enemy.enemyType == 1)
-                    {
+        for (Sprite enemy : hostileEntities) {
+            if (enemy.isAlive) {
+                if (Math.random() > 0.985d) {
+                    if (enemy.enemyType == 1) {
                         Sprite s = new Sprite("sprites/shot-e-2.png", cache);
                         s.x = enemy.x;
                         s.y = enemy.y + 25;
                         s.setActiveAnimation("east", 1000);
-                        s.moveSprite(-2, 0, 5);
+                        s.moveSprite(-3, 0, 5);
                         Sprite s2 = new Sprite("sprites/shot-e-2.png", cache);
                         s2.x = enemy.x;
                         s2.y = enemy.y + 25;
                         s2.setActiveAnimation("east", 1000);
-                        s2.moveSprite(-2, 1, 5);
+                        s2.moveSprite(-3, 1, 5);
                         Sprite s3 = new Sprite("sprites/shot-e-2.png", cache);
                         s3.x = enemy.x;
                         s3.y = enemy.y + 25;
                         s3.setActiveAnimation("east", 1000);
-                        s3.moveSprite(-2, -1, 5);
+                        s3.moveSprite(-3, -1, 5);
 
                         hostileProjectile.add(s);
                         hostileProjectile.add(s2);
                         hostileProjectile.add(s3);
 
-                    }
-                    else
-                    {
+                    } else {
 
                         Sprite s = new Sprite("sprites/shot-e.png", cache);
                         s.x = enemy.x;
                         s.y = enemy.y + 25;
                         s.setActiveAnimation("east", 1000);
-                        s.moveSprite(-2, 0, 5);
+                        s.moveSprite(-3, 0, 5);
 
                         hostileProjectile.add(s);
                     }
@@ -570,20 +557,18 @@ public class GameEngine
         p.addPoint(playerShip.x + 28, playerShip.y + 48);
         p.addPoint(playerShip.x + 5, playerShip.y + 48);
 
-        if (hasLaser)
-        {
+        if (hasLaser) {
             laserShape = new Rectangle(playerShip.x + 91, playerShip.y + 4, 640, 60);
         }
 
-        if (!dead)
-        {
-            for (Sprite powerup : powerUps)
-            {
+        if (!dead) {
+
+            for (Sprite powerup : powerUps) {
+
                 Ellipse2D r2 = new Ellipse2D.Double(powerup.x, powerup.y, 25, 25);
                 Area newArea = new Area((Shape) r2.clone());
                 newArea.intersect(new Area(p));
-                if (!newArea.isEmpty())
-                {
+                if (!newArea.isEmpty()) {
                     tripleShot = false;
                     rapidFire = false;
                     nonStop = false;
@@ -592,9 +577,8 @@ public class GameEngine
                     drawLazer = false;
                     sounds.stopSound("laser");
 
-                    if (shieldSoundOn)
-                    {
-                        sounds.playSound("shield-off" ,1);
+                    if (shieldSoundOn) {
+                        sounds.playSound("shield-off", 1);
                         shieldSoundOn = false;
                         sounds.stopSound("shield");
                     }
@@ -603,17 +587,14 @@ public class GameEngine
                     double whichPowerup = Math.random();
 
                     if (whichPowerup < 0.33d) tripleShot = true;
-                    else if (whichPowerup < 0.66d)
-                    {
+                    else if (whichPowerup < 0.66d) {
                         lazer.setActiveAnimation("east", 5);
                         Timer t = new Timer();
                         t.schedule(new EnableLazer(), 550);
 
                         drawLazer = true;
                         sounds.playSound("laser", 20);
-                    }
-                    else
-                    {
+                    } else {
                         extraShield = true;
                         if (!shieldOn) sounds.playSound("shield", 20);
                         shieldSoundOn = true;
@@ -625,20 +606,17 @@ public class GameEngine
                 }
             }
 
-            for (Sprite hostileShots : hostileProjectile)
-            {
+            for (Sprite hostileShots : hostileProjectile) {
 
                 Ellipse2D r2 = new Ellipse2D.Double(hostileShots.x, hostileShots.y, 15, 15);
 
                 boolean destroyed = false;
 
                 // Check is destroyed by laser
-                if (hasLaser)
-                {
+                if (hasLaser) {
                     Area laserArea = new Area((Shape) r2.clone());
                     laserArea.intersect(new Area(laserShape));
-                    if (!laserArea.isEmpty())
-                    {
+                    if (!laserArea.isEmpty()) {
                         destroyed = true;
                         hostileShots.stopMove();
                         hostileProjectile.remove(hostileShots);
@@ -646,77 +624,67 @@ public class GameEngine
 
                 }
 
-                if (!destroyed)
-                {
+                if (!destroyed) {
                     Area newArea = new Area((Shape) r2.clone());
                     newArea.intersect(new Area(p));
-                    if (!newArea.isEmpty())
-                    {
-                        if (shieldOn)
-                        {
+                    if (!newArea.isEmpty()) {
+                        if (shieldOn) {
                             hostileShots.stopMove();
                             hostileShots.moveSprite(2, 0, 5);
                             friendlyProjectiles.add(hostileShots);
                             hostileProjectile.remove(hostileShots);
+                            hostileShots.isBounceBack = true;
                             sounds.playSound("reflect", 1);
-                        }
-                        else
-                        {
+                        } else {
                             lostLife();
                         }
                     }
                 }
             }
 
-            for (Sprite enemy : hostileEntities)
-            {
-                if (enemy.isAlive)
-                {
+            for (Sprite enemy : hostileEntities) {
+                if (enemy.isAlive) {
                     Rectangle r2 = new Rectangle(enemy.x + 8, enemy.y + 8, 48, 48);
 
                     // Check for laser smash
                     boolean destroyed = false;
 
-                    if (hasLaser)
-                    {
+                    if (hasLaser) {
                         Area laserArea = new Area((Shape) r2.clone());
                         laserArea.intersect(new Area(laserShape));
 
-                        if (!laserArea.isEmpty())
-                        {
+                        if (!laserArea.isEmpty()) {
                             destroyed = true;
                             killEnemy(enemy, null);
                         }
                     }
 
-                    if (!destroyed)
-                    {
+                    if (!destroyed) {
 
                         Area newArea = new Area((Shape) r2.clone());
 
                         newArea.intersect(new Area(p));
-                        if (!newArea.isEmpty())
-                        {
-                            if (shieldOn)
-                            {
+                        if (!newArea.isEmpty()) {
+                            if (shieldOn) {
                                 killEnemy(enemy, null);
-                            }
-                            else
-                            {
+                            } else {
                                 lostLife();
                             }
                         }
 
-                        for (Sprite shot : friendlyProjectiles)
-                        {
+                        for (Sprite shot : friendlyProjectiles) {
 
                             Ellipse2D r3 = new Ellipse2D.Double(shot.x, shot.y, 15, 15);
                             newArea = new Area((Shape) r3.clone());
 
                             newArea.intersect(new Area(r2));
-                            if (!newArea.isEmpty())
-                            {
+                            if (!newArea.isEmpty()) {
                                 killEnemy(enemy, shot);
+                                if (shot.isBounceBack) bounceBacks ++;
+                                if (bounceBacks >= 5) {
+                                    bounceBacks = 0;
+                                    multi += 1;
+                                }
                             }
                         }
                     }
@@ -726,18 +694,15 @@ public class GameEngine
     }
 
 
-    private class EnableLazer extends TimerTask
-    {
+    private class EnableLazer extends TimerTask {
         @Override
-        public void run()
-        {
+        public void run() {
             hasLaser = true;
             lazer.setActiveAnimation("lazer", 15);
         }
     }
 
-    private void lostLife()
-    {
+    private void lostLife() {
         sounds.playSound("explode", 2);
         hasLaser = false;
         drawLazer = false;
@@ -750,26 +715,22 @@ public class GameEngine
         t.schedule(new ResetTimer(), 2500);
     }
 
-    private void killEnemy(Sprite enemy, Sprite killedBy)
-    {
+    private void killEnemy(Sprite enemy, Sprite killedBy) {
         sounds.playSound("explode", 1);
 
-        score += 250;
+        score += 250 * multi;
 
-        if (killedBy != null)
-        {
-            if (Math.random() > 0.965d)
-            {
+        if (killedBy != null) {
+            if (Math.random() > 0.965d) {
                 Sprite newPowerUp = new Sprite("sprites/powerup-1.png", cache);
                 newPowerUp.rotated = true;
-                newPowerUp.moveSprite(-2, 0, 1000 / 60);
+                newPowerUp.moveSprite(-3, 0, 1000 / 60);
                 newPowerUp.x = enemy.x + 15;
                 newPowerUp.y = enemy.y + 15;
                 newPowerUp.setActiveAnimation("east", 10);
                 powerUps.offer(newPowerUp);
             }
-            if (!nonStop)
-            {
+            if (!nonStop) {
                 friendlyProjectiles.remove(killedBy);
                 killedBy.terminate();
             }
@@ -783,28 +744,23 @@ public class GameEngine
         t.schedule(new RemoveEnemyAfterDuration(enemy), 750);
     }
 
-    private class RemoveEnemyAfterDuration extends TimerTask
-    {
+    private class RemoveEnemyAfterDuration extends TimerTask {
         private Sprite enemy;
 
-        public RemoveEnemyAfterDuration(Sprite enemy)
-        {
+        public RemoveEnemyAfterDuration(Sprite enemy) {
             this.enemy = enemy;
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             enemy.terminate();
             hostileEntities.remove(enemy);
         }
     }
 
 
-    private void reset()
-    {
-        if (lives > 0)
-        {
+    private void reset() {
+        if (lives > 0) {
             hostileEntities.clear();
             hostileProjectile.clear();
             friendlyEntities.clear();
@@ -813,15 +769,14 @@ public class GameEngine
             shieldEnergy = 1000;
             playerShip.setActiveAnimation("east", 1000);
             dead = false;
+            multi = 1;
             powerUpEnergy = 0;
             hasPowerUp = false;
             tripleShot = false;
             hasLaser = false;
             drawLazer = false;
             extraShield = false;
-        }
-        else
-        {
+        } else {
             // Game Over
             Timer t = new Timer();
             t.schedule(new ReturnToTitle(), 3500);
@@ -831,17 +786,17 @@ public class GameEngine
         }
     }
 
-    public class ReturnToTitle extends TimerTask
-    {
+    public class ReturnToTitle extends TimerTask {
 
         @Override
-        public void run()
-        {
+        public void run() {
             gameOver = false;
             gameStarted = false;
             canFire = false;
             score = 0;
             lives = 3;
+            multi = 1;
+            extraLifeScore = 25000;
             shieldEnergy = 1000;
             powerUpEnergy = 0;
             hostileEntities.clear();
@@ -863,107 +818,86 @@ public class GameEngine
             drawLazer = false;
             if (shieldSoundOn) sounds.stopSound("shield");
 
+            Properties prop = new Properties();
+            prop.setProperty("highscore", String.valueOf(highScore));
+            try {
+                prop.store(new FileWriter(new File("config.prop")), "");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
         }
     }
 
-    private class ResetTimer extends TimerTask
-    {
+    private class ResetTimer extends TimerTask {
         @Override
-        public void run()
-        {
+        public void run() {
             reset();
         }
     }
 
-    private class StartTimer extends TimerTask
-    {
+    private class StartTimer extends TimerTask {
         @Override
-        public void run()
-        {
+        public void run() {
             gameStarted = true;
         }
     }
 
-    private class InputTimer extends TimerTask
-    {
+    private class InputTimer extends TimerTask {
         @Override
-        public void run()
-        {
+        public void run() {
             if (gameStarted) renderStars();
-            if (!dead && gameStarted)
-            {
-                score += 1;
-                //pollControler();
+            if (!dead && gameStarted) {
+                score += multi;
                 input();
                 logic();
             }
+            ticks ++;
         }
     }
 
-    public void pollControler()
-    {
-        float x = controller.getXAxisPosition();
-        float y = controller.getYAxisPosition();
-        float btn1 = controller.getButton(0);
-        float btn2 = controller.getButton(1);
-        rightPressed = x == 1.0f;
-        leftPressed = x == -1.0f;
-        downPressed = y == 1.0f;
-        upPressed = y == -1.0f;
-        if (btn1 == 1.0f)
-        {
-            if (!spacePressed)
-            {
-                spacePressed = true;
-                canFire = true;
-            }
-        }
-        else
-        {
-            spacePressed = false;
+    private void checkScores() {
+
+        if (score >= highScore) {
+            highScore = score;
         }
 
-        controlPressed = btn2 == 1.0f;
+        if (score >= extraLifeScore) {
+            lives++;
+            extraLifeScore += (extraLifeScore * extraLifeMultiple);
+            sounds.playSound("powerup", 10);
+        }
     }
 
-    private void input()
-    {
-        int shipSpeed = 2;
+    private void input() {
+        int shipSpeed = 3;
         if (downPressed) playerShip.y += playerShip.y + 64 >= resolutionY ? 0 : shipSpeed;
         if (upPressed) playerShip.y -= playerShip.y <= 0 ? 0 : shipSpeed;
         if (leftPressed) playerShip.x -= playerShip.x <= 0 ? 0 : shipSpeed;
         if (rightPressed) playerShip.x += playerShip.x + 64 >= resolutionX / 2 ? 0 : shipSpeed;
-        if (controlPressed || extraShield)
-        {
+        if (controlPressed || extraShield) {
             if (extraShield && shieldEnergy < 1000) shieldEnergy++;
             shieldOn = (shieldEnergy > 0) || extraShield;
-            if (shieldOn)
-            {
+            if (shieldOn) {
                 if (!extraShield) shieldEnergy -= 5;
                 playerShip.setActiveAnimation("ship-shield", 100);
-            }
-            else
-            {
+            } else {
                 playerShip.setActiveAnimation("east", 1000);
-                if (shieldSoundOn)
-                {
+                if (shieldSoundOn) {
                     sounds.playSound("shield-off", 2);
                     sounds.stopSound("shield");
                     shieldSoundOn = false;
                 }
             }
-        }
-        else
-        {
+        } else {
             shieldOn = false;
             playerShip.setActiveAnimation("east", 1000);
             if (shieldEnergy < 1000) shieldEnergy += 1;
         }
-        if (canFire || (rapidFire && spacePressed))
-        {
+        if (canFire || (rapidFire && spacePressed)) {
 
-            if (tripleShot)
-            {
+            if (tripleShot) {
                 sounds.playSound("triple", 1);
                 Sprite northShot = new Sprite("sprites/triple-3.png", cache);
                 northShot.x = playerShip.x + playerShip.getFrame().getWidth() - 12;
@@ -972,27 +906,25 @@ public class GameEngine
                 southShot.x = playerShip.x + playerShip.getFrame().getWidth() - 12;
                 southShot.y = playerShip.y + playerShip.getFrame().getHeight() / 2 - 7;
                 northShot.setActiveAnimation("east", 1000);
-                northShot.moveSprite(2, 1, 5);
+                northShot.moveSprite(3, 1, 5);
                 southShot.setActiveAnimation("east", 1000);
-                southShot.moveSprite(2, -1, 5);
+                southShot.moveSprite(3, -1, 5);
                 friendlyProjectiles.add(northShot);
                 friendlyProjectiles.add(southShot);
                 Sprite newShot = new Sprite("sprites/triple-1.png", cache);
                 newShot.x = playerShip.x + playerShip.getFrame().getWidth() - 12;
                 newShot.y = playerShip.y + playerShip.getFrame().getHeight() / 2 - 6;
                 newShot.setActiveAnimation("east", 1000);
-                newShot.moveSprite(2, 0, 5);
+                newShot.moveSprite(3, 0, 5);
                 friendlyProjectiles.add(newShot);
-            }
-            else
-            {
+            } else {
                 sounds.playSound("shoot", 1);
                 Sprite newShot = new Sprite("sprites/shot.png", cache);
                 newShot.x = playerShip.x + playerShip.getFrame().getWidth() - 12;
                 newShot.y = playerShip.y + playerShip.getFrame().getHeight() / 2 - 6;
 
                 newShot.setActiveAnimation("east", 1000);
-                newShot.moveSprite(2, 0, 5);
+                newShot.moveSprite(3, 0, 5);
                 friendlyProjectiles.add(newShot);
             }
             score += 5;
@@ -1001,79 +933,66 @@ public class GameEngine
         }
     }
 
-    protected class KeyInputHandler extends KeyAdapter
-    {
+    protected class KeyInputHandler extends KeyAdapter {
         @Override
-        public void keyPressed(KeyEvent e)
-        {
-            if (e.getKeyCode() == KeyEvent.VK_ENTER && !gameStarted)
-            {
+        public void keyPressed(KeyEvent e) {
+
+            if (e.getKeyCode() == KeyEvent.VK_ENTER && !gameStarted) {
                 flashTimer.cancel();
                 gameStarted = true;
             }
+
             if (e.getKeyCode() == KeyEvent.VK_UP) upPressed = true;
             if (e.getKeyCode() == KeyEvent.VK_DOWN) downPressed = true;
             if (e.getKeyCode() == KeyEvent.VK_LEFT) leftPressed = true;
             if (e.getKeyCode() == KeyEvent.VK_RIGHT) rightPressed = true;
-            if (e.getKeyCode() == KeyEvent.VK_CONTROL)
-            {
+            if (e.getKeyCode() == KeyEvent.VK_CONTROL) {
                 controlPressed = true;
-                if (shieldEnergy > 0 && !shieldSoundOn)
-                {
+                if (shieldEnergy > 0 && !shieldSoundOn) {
                     if (!shieldOn) sounds.playSound("shield", 20);
                     shieldSoundOn = true;
                 }
             }
-            if (e.getKeyCode() == KeyEvent.VK_SPACE)
-            {
-                if (!spacePressed)
-                {
+            if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                if (!spacePressed) {
                     spacePressed = true;
                     canFire = true;
                 }
             }
 
-            if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
-            {
+            if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
                 running = false;
             }
         }
 
         @Override
-        public void keyReleased(KeyEvent e)
-        {
+        public void keyReleased(KeyEvent e) {
             if (e.getKeyCode() == KeyEvent.VK_UP) upPressed = false;
             if (e.getKeyCode() == KeyEvent.VK_DOWN) downPressed = false;
             if (e.getKeyCode() == KeyEvent.VK_LEFT) leftPressed = false;
             if (e.getKeyCode() == KeyEvent.VK_RIGHT) rightPressed = false;
-            if (e.getKeyCode() == KeyEvent.VK_CONTROL)
-            {
+            if (e.getKeyCode() == KeyEvent.VK_CONTROL) {
                 controlPressed = false;
-                if (shieldSoundOn && !extraShield)
-                {
-                    sounds.playSound("shield-off" , 2);
+                if (shieldSoundOn && !extraShield) {
+                    sounds.playSound("shield-off", 2);
                     sounds.stopSound("shield");
                     shieldSoundOn = false;
                 }
             }
-            if (e.getKeyCode() == KeyEvent.VK_SPACE)
-            {
+            if (e.getKeyCode() == KeyEvent.VK_SPACE) {
                 spacePressed = false;
             }
         }
 
         @Override
-        public void keyTyped(KeyEvent e)
-        {
+        public void keyTyped(KeyEvent e) {
 
         }
     }
 
-    private class FlashTimer extends TimerTask
-    {
+    private class FlashTimer extends TimerTask {
         @Override
-        public void run()
-        {
+        public void run() {
             flash = !flash;
         }
     }

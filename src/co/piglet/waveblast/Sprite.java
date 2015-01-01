@@ -5,8 +5,7 @@ import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class Sprite
-{
+public class Sprite {
     private HashMap<String, SpriteAnimation> animations;
     private SpriteAnimation activeAnimation;
 
@@ -18,16 +17,14 @@ public class Sprite
 
     public int enemyType = 0;
 
-    public int x;
+    public int x;;
     public int y;
 
     public boolean rotated;
-    public double rotationAngle = 0;
 
-    public double scale;
+    public boolean isBounceBack;
 
-    public Sprite(String sprite, ImageCache cache)
-    {
+    public Sprite(String sprite, ImageCache cache) {
         // Init Objects
         animations = new HashMap<>();
 
@@ -42,16 +39,13 @@ public class Sprite
         animations.put("east", animation);
     }
 
-    public void loadAdditionalAnimations(String sprite, ImageCache cache)
-    {
+    public void loadAdditionalAnimations(String sprite, ImageCache cache) {
         SpriteAnimation shield = new SpriteAnimation(sprite, cache);
         animations.put(sprite, shield);
     }
 
-    public void setActiveAnimation(String target, int interval)
-    {
-        if (!target.equals(animationString))
-        {
+    public void setActiveAnimation(String target, int interval) {
+        if (!target.equals(animationString)) {
             if (activeAnimation != null) activeAnimation.stopAnimation();
             activeAnimation = animations.get(target);
             activeAnimation.animate(interval);
@@ -59,46 +53,38 @@ public class Sprite
         }
     }
 
-    public BufferedImage getFrame()
-    {
-        if (rotated)
-        {
+    public BufferedImage getFrame() {
+        if (rotated) {
             return activeAnimation.getRotatedFrame();
         }
         return activeAnimation.getFrame();
     }
 
-    public void terminate()
-    {
+    public void terminate() {
         timer.cancel();
         activeAnimation.stopAnimation();
     }
 
-    public void stopMove()
-    {
+    public void stopMove() {
         timer.cancel();
     }
 
-    public void moveSprite(int incX, int incY, int interval)
-    {
+    public void moveSprite(int incX, int incY, int interval) {
         timer = new Timer();
         timer.schedule(new MovementTimer(incX, incY), 0, interval);
     }
 
-    private class MovementTimer extends TimerTask
-    {
+    private class MovementTimer extends TimerTask {
         private int incX;
         private int incY;
 
-        public MovementTimer(int incX, int incY)
-        {
+        public MovementTimer(int incX, int incY) {
             this.incX = incX;
             this.incY = incY;
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             x += incX;
             y += incY;
         }
