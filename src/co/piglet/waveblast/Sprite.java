@@ -5,16 +5,15 @@ import java.util.HashMap;
 import java.util.Timer;
 
 public class Sprite {
+
     private HashMap<String, SpriteAnimation> animations;
     private SpriteAnimation activeAnimation;
 
     private String animationString;
 
-    private Timer timer;
-
     public boolean isAlive = true;
 
-    public int enemyType = 0;
+    public EnemyTypes enemyType = EnemyTypes.STANDARD;
 
     public int x;
     public int incX;
@@ -64,41 +63,21 @@ public class Sprite {
     }
 
     public void terminate() {
-        //timer.cancel();
         activeAnimation.stopAnimation();
     }
 
-    public void stopMove() {
-       // timer.cancel();
-    }
-
-    public void moveSprite(int incX, int incY, int interval) {
-        //timer = new Timer();
-        //timer.schedule(new MovementTimer(incX, incY), 0, interval);
+    public void moveSprite(int incX, int incY) {
         this.incX = incX;
         this.incY = incY;
     }
 
     public void move() {
-        x += incX;
-        y += incY;
+        if (isAlive) {
+            x += incX;
+            y += incY;
+        }
     }
 
-//    private class MovementTimer extends TimerTask {
-//        private int incX;
-//        private int incY;
-//
-//        public MovementTimer(int incX, int incY) {
-//            this.incX = incX;
-//            this.incY = incY;
-//        }
-//
-//        @Override
-//        public void run() {
-//            x += incX;
-//            y += incY;
-//        }
-//    }
 }
 
 
