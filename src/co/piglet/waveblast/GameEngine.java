@@ -273,6 +273,8 @@ public class GameEngine {
 
     private void render() {
 
+        g = (Graphics2D) strategy.getDrawGraphics();
+
         if (gameStarted) {
 
             g.setColor(Color.BLACK);
@@ -341,6 +343,7 @@ public class GameEngine {
             }
 
             this.renderUI();
+
         } else {
 
             g.setColor(Color.BLACK);
@@ -356,6 +359,7 @@ public class GameEngine {
         }
 
         strategy.show();
+        g.dispose();
     }
 
     public void loadLevel() {
@@ -401,7 +405,7 @@ public class GameEngine {
             }
         } else {
             Timer t = new Timer();
-            t.schedule(new InputTimer(), 0, 1000 / 60);
+            t.schedule(new InputTimer(), 0, 1000 / 100);
 
 //            while (running) {
 //                this.render();
@@ -426,7 +430,7 @@ public class GameEngine {
 
             stars.add(s);
         }
-
+           // PIGS
     }
 
     private void renderLaserStars() {
@@ -455,6 +459,7 @@ public class GameEngine {
         friendlyEntities.forEach(Sprite::move);
         friendlyProjectiles.forEach(Sprite::move);
         powerUps.forEach(Sprite::move);
+        stars.forEach(Sprite::move);
 
         // This is where we spawn enemies etc..
         double d = Math.random();
@@ -496,7 +501,7 @@ public class GameEngine {
                 s.x = resolutionX;
                 s.y = (int) (Math.random() * (resolutionY - 64));
                 s.setActiveAnimation("east", 1000);
-                s.moveSprite(-6, 0, 1000 / 59);
+                s.moveSprite(-4, 0, 1000 / 59);
                 s.enemyType = 1;
             } else {
                 // Spawn hostile
@@ -504,7 +509,7 @@ public class GameEngine {
                 s.x = resolutionX;
                 s.y = (int) (Math.random() * (resolutionY - 64));
                 s.setActiveAnimation("east", 1000);
-                int speed = Math.random() > 0.5d ? -8 : -6;
+                int speed = Math.random() > 0.5d ? -5 : -4;
 
                 double angleChance = Math.random();
                 if (angleChance < 0.8d) s.moveSprite(speed, 0, 1000 / 60);
@@ -526,17 +531,17 @@ public class GameEngine {
                         s.x = enemy.x;
                         s.y = enemy.y + 25;
                         s.setActiveAnimation("east", 1000);
-                        s.moveSprite(-6, 0, 5);
+                        s.moveSprite(-8, 0, 5);
                         Sprite s2 = new Sprite("sprites/shot-e-2.png", cache);
                         s2.x = enemy.x;
                         s2.y = enemy.y + 25;
                         s2.setActiveAnimation("east", 1000);
-                        s2.moveSprite(-6, 1, 5);
+                        s2.moveSprite(-8, 1, 5);
                         Sprite s3 = new Sprite("sprites/shot-e-2.png", cache);
                         s3.x = enemy.x;
                         s3.y = enemy.y + 25;
                         s3.setActiveAnimation("east", 1000);
-                        s3.moveSprite(-6, -1, 5);
+                        s3.moveSprite(-8, -1, 5);
 
                         hostileProjectile.add(s);
                         hostileProjectile.add(s2);
@@ -548,7 +553,7 @@ public class GameEngine {
                         s.x = enemy.x;
                         s.y = enemy.y + 25;
                         s.setActiveAnimation("east", 1000);
-                        s.moveSprite(-6, 0, 5);
+                        s.moveSprite(-8, 0, 5);
 
                         hostileProjectile.add(s);
                     }
@@ -637,7 +642,7 @@ public class GameEngine {
                     if (!newArea.isEmpty()) {
                         if (shieldOn) {
                             hostileShots.stopMove();
-                            hostileShots.moveSprite(2, 0, 5);
+                            hostileShots.moveSprite(6, 0, 5);
                             friendlyProjectiles.add(hostileShots);
                             hostileProjectile.remove(hostileShots);
                             hostileShots.isBounceBack = true;
@@ -879,7 +884,7 @@ public class GameEngine {
     }
 
     private void input() {
-        int shipSpeed = 3;
+        int shipSpeed = 4;
         if (downPressed) playerShip.y += playerShip.y + 64 >= resolutionY ? 0 : shipSpeed;
         if (upPressed) playerShip.y -= playerShip.y <= 0 ? 0 : shipSpeed;
         if (leftPressed) playerShip.x -= playerShip.x <= 0 ? 0 : shipSpeed;
@@ -914,16 +919,16 @@ public class GameEngine {
                 southShot.x = playerShip.x + playerShip.getFrame().getWidth() - 12;
                 southShot.y = playerShip.y + playerShip.getFrame().getHeight() / 2 - 7;
                 northShot.setActiveAnimation("east", 1000);
-                northShot.moveSprite(3, 1, 5);
+                northShot.moveSprite(8, 1, 5);
                 southShot.setActiveAnimation("east", 1000);
-                southShot.moveSprite(3, -1, 5);
+                southShot.moveSprite(8, -1, 5);
                 friendlyProjectiles.add(northShot);
                 friendlyProjectiles.add(southShot);
                 Sprite newShot = new Sprite("sprites/triple-1.png", cache);
                 newShot.x = playerShip.x + playerShip.getFrame().getWidth() - 12;
                 newShot.y = playerShip.y + playerShip.getFrame().getHeight() / 2 - 6;
                 newShot.setActiveAnimation("east", 1000);
-                newShot.moveSprite(3, 0, 5);
+                newShot.moveSprite(8, 0, 5);
                 friendlyProjectiles.add(newShot);
             } else {
                 sounds.playSound("shoot", 1);
@@ -932,7 +937,7 @@ public class GameEngine {
                 newShot.y = playerShip.y + playerShip.getFrame().getHeight() / 2 - 6;
 
                 newShot.setActiveAnimation("east", 1000);
-                newShot.moveSprite(6, 0, 5);
+                newShot.moveSprite(8, 0, 5);
                 friendlyProjectiles.add(newShot);
             }
             score += 5;

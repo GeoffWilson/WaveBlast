@@ -8,8 +8,6 @@
         </element>
         <element id="module-output" name="WaveBlast" />
       </element>
-      <element id="library" level="project" name="jinput" />
-      <element id="library" level="project" name="vgm" />
     </root>
   </artifact>
 </component>

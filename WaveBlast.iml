@@ -7,8 +7,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="vgm" level="project" />
     <orderEntry type="library" name="jinput" level="project" />
+    <orderEntry type="library" name="vgm" level="project" />
   </component>
 </module>
-
