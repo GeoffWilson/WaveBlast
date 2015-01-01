@@ -536,10 +536,11 @@ public class GameEngine {
                     s.moveSprite(-1, 0);
                     s.enemyType = EnemyTypes.TURRET_NORTH;
                 } else {
-                    s = new Sprite("sprites/turret.png", cache);
+                    s = new Sprite("turret", cache);
                     s.x = resolutionX;
                     s.y = resolutionY - 178;
-                    s.setActiveAnimation("east", 1000);
+                    s.loadAdditionalAnimations("turret", cache);
+                    s.setActiveAnimation("turret", 250);
                     s.moveSprite(-1, 0);
                     s.enemyType = EnemyTypes.TURRET_SOUTH;
                     s.shotTypes= new Point[] {

@@ -23,6 +23,17 @@ public class SpriteAnimation {
             animationName = spriteName;
             frames = new ArrayList<>();
             switch (spriteName) {
+                case "turret":
+                    for (int i = 1; i < 3; i++) {
+                        String frameName = "sprites/" + spriteName + "-" + i + ".png";
+                        if (cache.contains(frameName)) frames.add(cache.getFromCache(frameName));
+                        else {
+                            BufferedImage newFrame = ImageIO.read(new FileInputStream("sprites/" + spriteName + "-" + i + ".png"));
+                            frames.add(newFrame);
+                            cache.addToCache(frameName, newFrame);
+                        }
+                    }
+                    break;
                 case "powerup":
                     for (int i = 1; i < 7; i++) {
                         String frameName = "sprites/" + spriteName + "-" + i + ".png";
@@ -33,6 +44,7 @@ public class SpriteAnimation {
                             cache.addToCache(frameName, newFrame);
                         }
                     }
+                    break;
                 case "lazerstart":
                     for (int i = 1; i < 3; i++) {
                         String frameName = "sprites/" + spriteName + "-" + i + ".png";
