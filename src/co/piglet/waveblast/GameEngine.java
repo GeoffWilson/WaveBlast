@@ -10,6 +10,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -95,6 +96,7 @@ public class GameEngine {
     private ConcurrentLinkedQueue<Sprite> powerUps;
     private ConcurrentLinkedQueue<Sprite> stars;
     private ConcurrentLinkedQueue<Sprite> laserStars;
+    private ConcurrentLinkedQueue<Sprite> terrain;
     private BufferedImage title;
     private BufferedImage uiShield;
     private BufferedImage uiPower;
@@ -162,7 +164,6 @@ public class GameEngine {
         strategy = c.getBufferStrategy();
 
         ExtendedBufferCapabilities ebc = new ExtendedBufferCapabilities(strategy.getCapabilities());
-        ebc.getVSync();
         ebc = ebc.derive(ExtendedBufferCapabilities.VSyncType.VSYNC_ON);
 
         c.createBufferStrategy(2, ebc);
@@ -297,6 +298,10 @@ public class GameEngine {
                 } else g.drawImage(star.getFrame(), star.x, star.y, null);
             }
 
+            for (Sprite sprite : terrain) {
+                g.drawImage(sprite.getFrame(), sprite.x, sprite.y, null);
+            }
+
             // This is where we render the next frame
             for (Sprite sprite : friendlyEntities) {
                 g.drawImage(sprite.getFrame(), sprite.x, sprite.y, null);
@@ -383,6 +388,7 @@ public class GameEngine {
         powerUps = new ConcurrentLinkedQueue<>();
         stars = new ConcurrentLinkedQueue<>();
         laserStars = new ConcurrentLinkedQueue<>();
+        terrain = new ConcurrentLinkedQueue<>();
 
         playerShip = new Sprite("sprites/ship.png", cache);
         playerShip.loadAdditionalAnimations("ship-shield", cache);
@@ -394,6 +400,19 @@ public class GameEngine {
         playerShip.x = 75;
         playerShip.y = (resolutionY / 2) - (playerShip.getFrame().getHeight() / 2);
 
+        Sprite topTerrain = new Sprite("sprites/top.png", cache);
+        Sprite bottomTerrain = new Sprite("sprites/bottom.png", cache);
+
+        topTerrain.moveSprite(-1, 0, 0);
+        topTerrain.setActiveAnimation("east", 1000);
+        bottomTerrain.moveSprite(-1, 0, 0);
+        bottomTerrain.setActiveAnimation("east", 1000);
+
+        bottomTerrain.y = resolutionY - 128;
+
+        terrain.add(topTerrain);
+        terrain.add(bottomTerrain);
+
         c.requestFocus();
         c.requestFocusInWindow();
     }
@@ -402,19 +421,15 @@ public class GameEngine {
 
         running = true;
 
-        if (fullScreen) {
-            while (running) {
-                if (gameStarted) this.renderStars();
-                if (!dead && gameStarted) {
-                    score += 1;
-                    this.input();
-                    this.logic();
-                }
-                this.render();
+        while (running) {
+            if (gameStarted) this.renderStars();
+            this.move();
+            if (!dead && gameStarted) {
+                score += 1;
+                this.input();
+                this.logic();
             }
-        } else {
-            Timer t = new Timer();
-            t.scheduleAtFixedRate(new InputTimer(), 0, 1000 / 60);
+            this.render();
         }
 
     }
@@ -456,8 +471,7 @@ public class GameEngine {
 
     }
 
-    private void logic() {
-
+    private void move() {
         // Move everything
         hostileEntities.forEach(Sprite::move);
         hostileProjectile.forEach(Sprite::move);
@@ -465,8 +479,13 @@ public class GameEngine {
         friendlyProjectiles.forEach(Sprite::move);
         powerUps.forEach(Sprite::move);
         stars.forEach(Sprite::move);
+        laserStars.forEach(Sprite::move);
+        terrain.forEach(Sprite::move);
+    }
 
-        // This is where we spawn enemies etc..
+    private void logic() {
+
+                // This is where we spawn enemies etc..
         double d = Math.random();
         double delta = score > 10000 ? 0.93d : 0.96d;
         if (score > 50000) delta = 0.90d;
@@ -621,6 +640,17 @@ public class GameEngine {
                     hasPowerUp = true;
                     sounds.playSound("power", 2);
                 }
+            }
+
+            for (Sprite t : terrain) {
+
+                Rectangle2D r2 = new Rectangle2D.Double(t.x, t.y ,t.getFrame().getWidth() - t.x, t.getFrame().getHeight());
+                Area newArea = new Area((Shape) r2.clone());
+                newArea.intersect(new Area(p));
+                if (!newArea.isEmpty()) {
+                    lostLife();
+                }
+
             }
 
             for (Sprite hostileShots : hostileProjectile) {
