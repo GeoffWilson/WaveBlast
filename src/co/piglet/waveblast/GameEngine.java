@@ -522,7 +522,7 @@ public class GameEngine {
 
             double type = Math.random();
             int minY = 96;
-            int maxY = resolutionY - 128;
+            int maxY = resolutionY - 128 - 64;
 
             Sprite s;
 
@@ -542,6 +542,14 @@ public class GameEngine {
                     s.setActiveAnimation("east", 1000);
                     s.moveSprite(-1, 0);
                     s.enemyType = EnemyTypes.TURRET_SOUTH;
+                    s.shotTypes= new Point[] {
+                            new Point(-2, 0),
+                            new Point(-2, -1),
+                            new Point(-2, -2),
+                            new Point(-2, -3),
+                            new Point(-2, -2),
+                            new Point(-2, -1)
+                    };
                 }
 
             } else if (type > 0.90d) {
@@ -580,7 +588,7 @@ public class GameEngine {
             }
 
             if (s.y < minY) s.y = minY;
-            if (s.y > maxY) s.y = 300;
+            if (s.y > maxY && s.enemyType != EnemyTypes.TURRET_SOUTH) s.y = 300;
 
             hostileEntities.add(s);
 
@@ -589,10 +597,28 @@ public class GameEngine {
         // Enemy shots!
         for (Sprite enemy : hostileEntities) {
             if (enemy.isAlive) {
-                if (Math.random() > 0.985d) {
+
+                if (enemy.isShooting) {
+
+                    enemy.shotInterval ++;
+                    if (enemy.shotInterval < enemy.shotTypes.length ) {
+                        Sprite s2 = new Sprite("sprites/shot-e-3.png", cache);
+                        s2.x = enemy.x;
+                        s2.y = enemy.y + 25;
+                        s2.setActiveAnimation("east", 1000);
+                        s2.moveSprite(enemy.shotTypes[enemy.shotInterval].x, enemy.shotTypes[enemy.shotInterval].y);
+                        hostileProjectile.add(s2);
+                    } else {
+                        enemy.isShooting = false;
+                        enemy.shotInterval = 0;
+                    }
+
+                } else if (Math.random() > 0.985d) {
+
                     switch (enemy.enemyType) {
 
                         case TURRET_NORTH: {
+
                             Sprite s2 = new Sprite("sprites/shot-e-3.png", cache);
                             s2.x = enemy.x;
                             s2.y = enemy.y + 25;
@@ -600,19 +626,25 @@ public class GameEngine {
                             s2.moveSprite(-8, 1);
                             hostileProjectile.add(s2);
                             break;
+
                         }
 
                         case TURRET_SOUTH: {
+
                             Sprite s2 = new Sprite("sprites/shot-e-3.png", cache);
                             s2.x = enemy.x;
                             s2.y = enemy.y + 25;
                             s2.setActiveAnimation("east", 1000);
-                            s2.moveSprite(-8, -1);
+                            s2.moveSprite(enemy.shotTypes[0].x, enemy.shotTypes[0].y);
+                            enemy.isShooting = true;
                             hostileProjectile.add(s2);
+
                             break;
+
                         }
 
                         case TRIPLE_SHOT:  {
+
                             Sprite s = new Sprite("sprites/shot-e-2.png", cache);
                             s.x = enemy.x;
                             s.y = enemy.y + 25;
@@ -634,7 +666,9 @@ public class GameEngine {
                             hostileProjectile.add(s3);
 
                             break;
+
                         }
+
                         default: {
 
                             Sprite s = new Sprite("sprites/shot-e.png", cache);

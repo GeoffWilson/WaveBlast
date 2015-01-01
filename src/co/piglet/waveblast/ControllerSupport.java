@@ -52,14 +52,15 @@ public class ControllerSupport {
     }
 
     private Controller getXboxController() {
-        // Detect if we have an Xbox controller present
 
+        // Detect if we have an Xbox controller present
         System.out.println("Checking Controller Support....");
         ControllerEnvironment ce = ControllerEnvironment.getDefaultEnvironment();
         Controller[] cs = ce.getControllers();
 
         for (Controller c : cs) {
-            if (c.getName().contains("playsega")) {
+            System.out.println(c.getName());
+            if (c.getName().toLowerCase().contains("xbox")) {
                 if (c.getType() == Controller.Type.GAMEPAD) {
                     return c;
                 }

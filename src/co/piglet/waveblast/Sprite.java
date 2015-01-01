@@ -1,5 +1,6 @@
 package co.piglet.waveblast;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Timer;
@@ -14,6 +15,9 @@ public class Sprite {
     public boolean isAlive = true;
 
     public EnemyTypes enemyType = EnemyTypes.STANDARD;
+    public Point[] shotTypes;
+    public int shotInterval;
+    public boolean isShooting;
 
     public int x;
     public int incX;
