@@ -619,7 +619,7 @@ public class GameEngine {
 
                         case TURRET_NORTH: {
 
-                            Sprite s2 = new Sprite("sprites/shot-e-3.png", cache);
+                            Sprite s2 = new Sprite("sprites/shot-e-4.png", cache);
                             s2.x = enemy.x;
                             s2.y = enemy.y + 25;
                             s2.setActiveAnimation("east", 1000);
