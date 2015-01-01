@@ -253,9 +253,9 @@ public class GameEngine {
 
         if (lives <= 5) {
             int x = resolutionX - 60;
-            for (int i = 0; i < lives; i ++) {
+            for (int i = 0; i < lives; i++) {
                 g.drawImage(uiLife, x, resolutionY - 55, 32, 32, null);
-                x-= 40;
+                x -= 40;
             }
         } else {
             g.drawImage(uiLife, resolutionX - 100, resolutionY - 55, 32, 32, null);
@@ -299,7 +299,14 @@ public class GameEngine {
             }
 
             for (Sprite sprite : terrain) {
+                int terrainWidth = sprite.getFrame().getWidth();
+                if (terrainWidth - resolutionX - (-1 * sprite.x) <= resolutionX) {
+                    g.drawImage(sprite.getFrame(), sprite.x + terrainWidth, sprite.y, null);
+                }
                 g.drawImage(sprite.getFrame(), sprite.x, sprite.y, null);
+                if (terrainWidth == (-1 * sprite.x) && sprite.x < 0) {
+                    sprite.x = 0;
+                }
             }
 
             // This is where we render the next frame
@@ -390,6 +397,7 @@ public class GameEngine {
         laserStars = new ConcurrentLinkedQueue<>();
         terrain = new ConcurrentLinkedQueue<>();
 
+
         playerShip = new Sprite("sprites/ship.png", cache);
         playerShip.loadAdditionalAnimations("ship-shield", cache);
         playerShip.setActiveAnimation("east", 1000);
@@ -401,7 +409,10 @@ public class GameEngine {
         playerShip.y = (resolutionY / 2) - (playerShip.getFrame().getHeight() / 2);
 
         Sprite topTerrain = new Sprite("sprites/top.png", cache);
+        topTerrain.tileable = true;
         Sprite bottomTerrain = new Sprite("sprites/bottom.png", cache);
+        bottomTerrain.tileable = true;
+
 
         topTerrain.moveSprite(-1, 0, 0);
         topTerrain.setActiveAnimation("east", 1000);
@@ -450,7 +461,7 @@ public class GameEngine {
 
             stars.add(s);
         }
-           // PIGS
+        // PIGS
     }
 
     private void renderLaserStars() {
@@ -485,7 +496,7 @@ public class GameEngine {
 
     private void logic() {
 
-                // This is where we spawn enemies etc..
+        // This is where we spawn enemies etc..
         double d = Math.random();
         double delta = score > 10000 ? 0.93d : 0.96d;
         if (score > 50000) delta = 0.90d;
@@ -519,7 +530,26 @@ public class GameEngine {
             double type = Math.random();
 
             Sprite s;
+
             if (type > 0.95d) {
+                if (Math.random() > 0.50) {
+                    s = new Sprite("sprites/turret2.png", cache);
+                    s.x = resolutionX;
+                    s.y = 96;
+                    s.setActiveAnimation("east", 1000);
+                    s.moveSprite(-1, 0, 1000 / 59);
+                    s.enemyType = 2;
+
+                } else {
+                    s = new Sprite("sprites/turret.png", cache);
+                    s.x = resolutionX;
+                    s.y = resolutionY - 178;
+                    s.setActiveAnimation("east", 1000);
+                    s.moveSprite(-1, 0, 1000 / 59);
+                    s.enemyType = 3;
+                }
+
+            } else if (type > 0.90d) {
                 // Spawn hostile
                 s = new Sprite("sprites/new-enemy-3.png", cache);
                 s.x = resolutionX;
@@ -550,36 +580,59 @@ public class GameEngine {
         for (Sprite enemy : hostileEntities) {
             if (enemy.isAlive) {
                 if (Math.random() > 0.985d) {
-                    if (enemy.enemyType == 1) {
-                        Sprite s = new Sprite("sprites/shot-e-2.png", cache);
-                        s.x = enemy.x;
-                        s.y = enemy.y + 25;
-                        s.setActiveAnimation("east", 1000);
-                        s.moveSprite(-8, 0, 5);
-                        Sprite s2 = new Sprite("sprites/shot-e-2.png", cache);
-                        s2.x = enemy.x;
-                        s2.y = enemy.y + 25;
-                        s2.setActiveAnimation("east", 1000);
-                        s2.moveSprite(-8, 1, 5);
-                        Sprite s3 = new Sprite("sprites/shot-e-2.png", cache);
-                        s3.x = enemy.x;
-                        s3.y = enemy.y + 25;
-                        s3.setActiveAnimation("east", 1000);
-                        s3.moveSprite(-8, -1, 5);
+                    switch (enemy.enemyType) {
+                        case 2: {
+                            Sprite s2 = new Sprite("sprites/shot-e-2.png", cache);
+                            s2.x = enemy.x;
+                            s2.y = enemy.y + 25;
+                            s2.setActiveAnimation("east", 1000);
+                            s2.moveSprite(-8, 1, 5);
+                            hostileProjectile.add(s2);
+                            break;
+                        }
+                        case 3: {
+                            Sprite s2 = new Sprite("sprites/shot-e-2.png", cache);
+                            s2.x = enemy.x;
+                            s2.y = enemy.y + 25;
+                            s2.setActiveAnimation("east", 1000);
+                            s2.moveSprite(-8, -1, 5);
+                            hostileProjectile.add(s2);
+                            break;
+                        }
+                        case 1: {
+                            Sprite s = new Sprite("sprites/shot-e-2.png", cache);
+                            s.x = enemy.x;
+                            s.y = enemy.y + 25;
+                            s.setActiveAnimation("east", 1000);
+                            s.moveSprite(-8, 0, 5);
+                            Sprite s2 = new Sprite("sprites/shot-e-2.png", cache);
+                            s2.x = enemy.x;
+                            s2.y = enemy.y + 25;
+                            s2.setActiveAnimation("east", 1000);
+                            s2.moveSprite(-8, 1, 5);
+                            Sprite s3 = new Sprite("sprites/shot-e-2.png", cache);
+                            s3.x = enemy.x;
+                            s3.y = enemy.y + 25;
+                            s3.setActiveAnimation("east", 1000);
+                            s3.moveSprite(-8, -1, 5);
 
-                        hostileProjectile.add(s);
-                        hostileProjectile.add(s2);
-                        hostileProjectile.add(s3);
+                            hostileProjectile.add(s);
+                            hostileProjectile.add(s2);
+                            hostileProjectile.add(s3);
 
-                    } else {
+                            break;
+                        }
+                        default: {
 
-                        Sprite s = new Sprite("sprites/shot-e.png", cache);
-                        s.x = enemy.x;
-                        s.y = enemy.y + 25;
-                        s.setActiveAnimation("east", 1000);
-                        s.moveSprite(-8, 0, 5);
+                            Sprite s = new Sprite("sprites/shot-e.png", cache);
+                            s.x = enemy.x;
+                            s.y = enemy.y + 25;
+                            s.setActiveAnimation("east", 1000);
+                            s.moveSprite(-8, 0, 5);
 
-                        hostileProjectile.add(s);
+                            hostileProjectile.add(s);
+                            break;
+                        }
                     }
                 }
             }
@@ -644,7 +697,7 @@ public class GameEngine {
 
             for (Sprite t : terrain) {
 
-                Rectangle2D r2 = new Rectangle2D.Double(t.x, t.y ,t.getFrame().getWidth() - t.x, t.getFrame().getHeight());
+                Rectangle2D r2 = new Rectangle2D.Double(t.x, t.y, t.getFrame().getWidth() - t.x, t.getFrame().getHeight());
                 Area newArea = new Area((Shape) r2.clone());
                 newArea.intersect(new Area(p));
                 if (!newArea.isEmpty()) {
@@ -727,7 +780,7 @@ public class GameEngine {
                             newArea.intersect(new Area(r2));
                             if (!newArea.isEmpty()) {
                                 killEnemy(enemy, shot);
-                                if (shot.isBounceBack) bounceBacks ++;
+                                if (shot.isBounceBack) bounceBacks++;
                                 if (bounceBacks >= 5) {
                                     bounceBacks = 0;
                                     multi += 1;
@@ -901,7 +954,7 @@ public class GameEngine {
                 logic();
             }
             render();
-            ticks ++;
+            ticks++;
         }
     }
 

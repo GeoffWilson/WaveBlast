@@ -23,6 +23,7 @@ public class Sprite {
     public int incY;
 
     public boolean rotated;
+    public boolean tileable;
 
     public boolean isBounceBack;
 
