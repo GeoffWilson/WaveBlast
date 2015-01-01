@@ -582,16 +582,16 @@ public class GameEngine {
                 if (Math.random() > 0.985d) {
                     switch (enemy.enemyType) {
                         case 2: {
-                            Sprite s2 = new Sprite("sprites/shot-e-2.png", cache);
+                            Sprite s2 = new Sprite("sprites/shot-e-3.png", cache);
                             s2.x = enemy.x;
                             s2.y = enemy.y + 25;
                             s2.setActiveAnimation("east", 1000);
-                            s2.moveSprite(-8, 1, 5);
+                            s2.moveSprite(-8, 1, 10);
                             hostileProjectile.add(s2);
                             break;
                         }
                         case 3: {
-                            Sprite s2 = new Sprite("sprites/shot-e-2.png", cache);
+                            Sprite s2 = new Sprite("sprites/shot-e-3.png", cache);
                             s2.x = enemy.x;
                             s2.y = enemy.y + 25;
                             s2.setActiveAnimation("east", 1000);
