@@ -2,12 +2,10 @@ package co.piglet.waveblast;
 
 import java.awt.*;
 
-public class Main implements Runnable {
-    public void run() {
-
-    }
+public class Main {
 
     public static void main(String[] args) throws AWTException {
+
         boolean fullScreen = false;
         int x = 1280;
         int y = 720;
@@ -27,17 +25,14 @@ public class Main implements Runnable {
 
     }
 
-    public Main() {
-
-    }
-
     public Main(boolean fullScreen, int x, int y) throws AWTException {
+
         // Do pre-init here
         GameEngine g = new GameEngine(fullScreen, x, y);
 
         g.loadLevel();
         g.masterLoop();
 
-        //System.exit(0);
     }
+
 }
