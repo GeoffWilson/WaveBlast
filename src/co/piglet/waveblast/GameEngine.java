@@ -1063,7 +1063,7 @@ public class GameEngine {
         } else {
             shieldOn = false;
             playerShip.setActiveAnimation("east", 1000);
-            if (shieldEnergy < 1000) shieldEnergy += 1;
+            if (shieldEnergy < 1000) shieldEnergy += 2;
         }
 
         if (canFire || (rapidFire && spacePressed)) {
