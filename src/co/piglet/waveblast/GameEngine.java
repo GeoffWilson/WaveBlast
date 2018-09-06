@@ -15,7 +15,8 @@ import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * Version 1.0 Rendering engine for WaveBlast
@@ -433,7 +434,8 @@ public class GameEngine {
 
         running = true;
 
-        while (running) {
+        ScheduledExecutorService ses = Executors.newScheduledThreadPool(1);
+        ses.scheduleAtFixedRate(() -> {
             if (gameStarted) this.renderStars();
             this.move();
             if (!dead && gameStarted) {
@@ -442,8 +444,9 @@ public class GameEngine {
                 this.logic();
             }
             this.render();
-        }
+        }, 0, 16, TimeUnit.MILLISECONDS);
 
+        LockSupport.park();
     }
 
     private void renderStars() {
