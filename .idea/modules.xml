@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/WaveBlast.iml" filepath="$PROJECT_DIR$/WaveBlast.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/WaveBlast_main.iml" filepath="$PROJECT_DIR$/.idea/modules/WaveBlast_main.iml" group="WaveBlast" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/WaveBlast_test.iml" filepath="$PROJECT_DIR$/.idea/modules/WaveBlast_test.iml" group="WaveBlast" />
     </modules>
   </component>
 </project>

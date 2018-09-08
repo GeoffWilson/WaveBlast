@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="vgm">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/vgm.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
